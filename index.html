@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>TD db Markers Checker v1.0.0</title>
+  <style>
+    :root {
+      --success:#16a34a;
+      --danger:#d32f2f;
+      --border:#e0e0e0;
+      --text:#222;
+      --muted:#6b7280;
+      --good-bg:#ecfdf5;
+      --bad-bg:#fef2f2;
+      --good-border:#86efac;
+      --bad-border:#fca5a5;
+      --good-text:#166534;
+      --bad-text:#991b1b;
+      font-family:"SF Pro Display",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+
+    /* Dark/Light Mode Toggle */
+    .mode-toggle {
+      position:fixed;
+      top:20px;
+      right:20px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#f1f5f9;
+      padding:8px 12px;
+      border-radius:20px;
+      cursor:pointer;
+      z-index:1000;
+      border:1px solid #e2e8f0;
+      font-size:13px;
+      font-weight:600;
+      color:#475569;
+      transition:all 0.2s ease;
+    }
+
+    .mode-toggle:hover {
+      background:#e2e8f0;
+    }
+
+    .mode-toggle .icon {
+      font-size:16px;
+    }
+
+    body.dark-mode .mode-toggle {
+      background:#334155;
+      border-color:#475569;
+      color:#e2e8f0;
+    }
+
+    body.dark-mode .mode-toggle:hover {
+      background:#475569;
+    }
+
+    body {
+      background:#fff;
+      color:var(--text);
+      margin:0;
+      padding:40px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      position:relative;
+    }
+
+    h1 {
+      margin:0 0 12px;
+      font-size:36px !important;
+      font-weight:900;
+      letter-spacing:-1px;
+      color:#1e40af;
+      text-align:center;
+      line-height:1.2;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    h1 span {
+      font-size:36px !important;
+      font-weight:900;
+    }
+
+    h1 .version {
+      font-size:16px !important;
+      font-weight:700;
+      color:#64748b;
+      background:#f1f5f9;
+      padding:4px 10px;
+      border-radius:6px;
+      letter-spacing:0;
+    }
+
+    p {
+      margin:0 0 18px;
+      font-size:15px;
+      color:#555;
+      text-align:center;
+      max-width:600px;
+    }
+
+    /* REQUIREMENTS WRAPPER */
+    .requirements-wrapper {
+      display:flex;
+      justify-content:center;
+      width:100%;
+      margin:12px 0 16px;
+    }
+
+    .requirements-accordion {
+      width:100%;
+      max-width:600px;
+    }
+
+    .requirements-header {
+      background:#fefce8;
+      border:2px solid #fde047;
+      border-radius:12px;
+      padding:8px 12px;
+      cursor:pointer;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      transition:all 0.2s ease;
+      font-size:13px;
+      font-weight:700;
+      color:#854d0e;
+      white-space:nowrap;
+    }
+
+    .requirements-header:hover {
+      background:#fef9c3;
+      border-color:#facc15;
+    }
+
+    .requirements-header.active {
+      border-bottom-left-radius:0;
+      border-bottom-right-radius:0;
+      border-bottom-color:transparent;
+    }
+
+    .requirements-header .icon {
+      font-size:15px;
+    }
+
+    .requirements-chevron {
+      font-size:12px;
+      color:#a16207;
+      transition:transform 0.2s ease;
+      margin-left:4px;
+    }
+
+    .requirements-chevron.open {
+      transform:rotate(180deg);
+    }
+
+    .requirements-content {
+      max-height:0;
+      overflow:hidden;
+      transition:max-height 0.3s ease, border-width 0.1s ease;
+      background:#fefce8;
+      border:0px solid #fde047;
+      border-top:none;
+      border-bottom-left-radius:12px;
+      border-bottom-right-radius:12px;
+    }
+
+    .requirements-content.open {
+      max-height:500px;
+      border-width:2px;
+    }
+
+    .requirements-inner {
+      padding:14px 18px 16px;
+    }
+
+    .requirements-inner ul {
+      margin:0 0 12px;
+      padding-left:18px;
+      list-style:none;
+    }
+
+    .requirements-inner li {
+      margin-bottom:5px;
+      font-size:12px;
+      color:#713f12;
+      line-height:1.4;
+    }
+
+    .requirements-inner li::before {
+      content:"✓";
+      color:#16a34a;
+      font-weight:900;
+      margin-right:6px;
+    }
+
+    .requirements-inner .disclaimer {
+      background:#fef2f2;
+      border:1px solid #fca5a5;
+      border-radius:8px;
+      padding:8px 10px;
+      font-size:11px;
+      font-weight:600;
+      color:#991b1b;
+      line-height:1.3;
+    }
+
+    .requirements-inner .disclaimer::before {
+      content:"⚠️ ";
+      margin-right:4px;
+    }
+
+    .drop {
+      width:100%;
+      max-width:600px;
+      height:100px;
+      border:4px solid #3b82f6;
+      border-radius:16px;
+      padding:16px;
+      text-align:center;
+      font-weight:800;
+      font-size:18px;
+      cursor:pointer;
+      transition:all .2s ease;
+      background:#f8fafc;
+      user-select:none;
+      -webkit-user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:6px;
+      color:#1e40af;
+      box-shadow:0 4px 16px rgba(15,23,42,0.08);
+    }
+/* UNIFIED BLUE DROP ZONE (LIGHT + DARK MODE MATCH) */
+.drop,
+.drop.dragover {
+  background: #60a5fa !important;     /* Lighter Blue */
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+    .drop.dragover {
+      background:#93c5fd !important;
+      border-color:#2563eb !important;
+    }
+
+    .drop small {
+      font-weight:600;
+      font-size:14px;
+      color:#e0f2fe;
+    }
+
+    .session-name {
+      margin:16px auto 12px;
+      font-family:monospace;
+      font-size:18px !important;
+      font-weight:900 !important;
+      padding:14px 18px;
+      border-radius:12px;
+      border:2px solid #0ea5e9;
+      width:fit-content;
+      max-width:90vw;
+      white-space:nowrap;
+      text-align:center;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      animation:fadeInUp .25s ease-out;
+      box-sizing:border-box;
+    }
+
+    .session-name.good {
+      background:var(--good-bg);
+      border-color:var(--good-border);
+      color:var(--good-text);
+    }
+
+    .session-name.bad {
+      background:var(--bad-bg);
+      border-color:var(--bad-border);
+      color:var(--bad-text);
+    }
+
+    .illegal {
+      color:#FFD700 !important;
+      font-weight:bold !important;
+      background:#991b1b !important;
+      border-radius:2px !important;
+    }
+
+    .error-box {
+      margin-top:8px;
+      padding:10px 14px;
+      background:#f4f4f4;
+      border:1px solid #ddd;
+      border-radius:8px;
+      font-family:monospace;
+      font-size:14px;
+      color:#444;
+      text-align:center;
+      max-width:600px;
+    }
+
+    .section {
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:16px;
+      margin-top:12px;
+      width:100%;
+      max-width:600px;
+      background:#fafafa;
+      animation:fadeInUp .25s ease-out;
+    }
+
+    .section h2 {
+      font-size:16px;
+      font-weight:700;
+      margin:0 0 12px;
+      border-bottom:1px solid #ddd;
+      padding-bottom:6px;
+    }
+
+    .note {
+      font-size:13px;
+      color:#777;
+      font-style:italic;
+      margin:-6px 0 10px;
+    }
+
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:8px;
+      font-weight:700;
+      margin-top:12px;
+      font-size:14px;
+    }
+
+    .badge.ok::before {
+      content:"✔";
+      font-size:14px;
+    }
+
+    .badge.fail::before {
+      content:"✖";
+      font-size:14px;
+    }
+
+    .ok {
+      color:var(--success);
+      background:#ecfdf5;
+      border:1px solid #a7f3d0;
+    }
+
+    .expand-arrow {
+      font-size:10px;
+      transition:transform 0.2s ease;
+      margin-left:4px;
+    }
+
+    .badge.ok:hover .expand-arrow {
+      color:var(--success);
+    }
+
+    .passed-details {
+      margin-top:12px;
+      padding:10px;
+      background:#f0fdf4;
+      border:1px solid #a7f3d0;
+      border-radius:8px;
+      transition:all 0.2s ease;
+    }
+
+    .passed-details.hidden {
+      display:none;
+    }
+
+    .passed-details .track-box {
+      background:#fff;
+      border:1px solid #a7f3d0;
+      color:#166534;
+      white-space:nowrap;
+      overflow-x:auto;
+      font-size:13px;
+    }
+
+    .fail {
+      color:var(--danger);
+      background:#ffebee;
+      border:1px solid #ffcdd2;
+    }
+
+    .error-list {
+      margin-top:14px;
+      text-align:left;
+    }
+
+    .error-item {
+      background:#fff5f5;
+      border-left:4px solid var(--danger);
+      padding:10px 14px;
+      margin-bottom:8px;
+      border-radius:4px;
+      font-size:14px;
+    }
+
+    .tracks-list {
+      margin-top:8px;
+    }
+
+    .track-box {
+      border-radius:6px;
+      padding:8px 12px;
+      margin-bottom:6px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid var(--good-border);
+      background:var(--good-bg);
+      color:var(--good-text);
+      font-size:14px;
+      word-break:break-all;
+    }
+
+    .tracks-list {
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      width:100%;
+    }
+
+    .track-box.bad {
+      border-color:var(--bad-border);
+      background:var(--bad-bg);
+      color:var(--bad-text);
+    }
+
+    .track-num {
+      background:var(--success);
+      color:white;
+      font-weight:700;
+      padding:2px 8px;
+      border-radius:4px;
+      font-size:13px;
+      flex-shrink:0;
+    }
+
+    .track-box.bad .track-num {
+      background:#d32f2f;
+    }
+
+    .should-be {
+      margin-left:0;
+      margin-top:6px;
+      margin-bottom:4px;
+      font-size:13px;
+      color:var(--bad-text);
+      font-style:normal;
+      font-weight:600;
+      text-align:center;
+    }
+
+    .should-be-wrapper {
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      margin-bottom:8px;
+    }
+
+    .should-be-container {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:4px auto;
+      width:fit-content;
+      max-width:100%;
+    }
+
+    .should-be-box {
+      background:#f8fafc;
+      padding:10px 14px;
+      border-radius:8px;
+      border:1px solid #e2e8f0;
+      display:flex;
+      align-items:center;
+    }
+
+    .should-be code {
+      font-family:monospace;
+      font-size:13px;
+      background:transparent;
+      padding:0;
+      color:#0ea5e9;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .copy-btn {
+      background:transparent;
+      color:#0ea5e9;
+      border:none;
+      padding:6px;
+      border-radius:4px;
+      cursor:pointer;
+      transition:all 0.2s ease;
+      flex-shrink:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      width:20px;
+      height:20px;
+    }
+
+    .copy-btn::before {
+      content:"";
+      position:absolute;
+      width:11px;
+      height:11px;
+      border:2px solid currentColor;
+      border-radius:2px;
+      top:3px;
+      left:3px;
+      background:white;
+    }
+
+    .copy-btn::after {
+      content:"";
+      position:absolute;
+      width:11px;
+      height:11px;
+      border:2px solid currentColor;
+      border-radius:2px;
+      bottom:3px;
+      right:3px;
+      background:transparent;
+    }
+
+    .copy-btn:hover {
+      background:#e0f2fe;
+      color:#0284c7;
+    }
+
+    .copy-btn:active {
+      transform:scale(0.9);
+    }
+
+    .copy-btn.copied {
+      color:#16a34a;
+    }
+
+    .copy-btn.copied::before,
+    .copy-btn.copied::after {
+      display:none;
+    }
+
+    .copy-btn.copied-check {
+      font-size:16px;
+      font-weight:900;
+    }
+
+    /* PARTY MODE — ON TOP */
+    #party {
+      margin:40px 0 20px;
+      text-align:center;
+      animation:fadeIn 1s ease-in;
+      width:100%;
+    }
+
+    #party .congrats {
+      font-size:52px;
+      font-weight:900;
+      color:#16a34a;
+      margin:0 0 16px;
+      animation:bounce 1.2s infinite, rainbow 2s linear infinite;
+      letter-spacing:1px;
+      background:linear-gradient(90deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff0080, #ff0000);
+      background-size:200% auto;
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+
+    @keyframes rainbow {
+      0% { background-position:0% center; }
+      100% { background-position:200% center; }
+    }
+
+    #party .perfect {
+      font-size:30px;
+      color:#2563eb;
+      font-weight:700;
+      margin-bottom:12px;
+    }
+
+    #party .sparkle {
+      font-size:34px;
+      display:inline-block;
+      animation:spin 2s linear infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity:0; }
+      to { opacity:1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity:0;
+        transform:translateY(8px);
+      }
+      to {
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0%,100% { transform:translateY(0); }
+      50% { transform:translateY(-18px); }
+    }
+
+    @keyframes spin {
+      from { transform:rotate(0deg); }
+      to { transform:rotate(360deg); }
+    }
+
+    canvas {
+      position:fixed;
+      top:0;
+      left:0;
+      pointer-events:none;
+      z-index:9999;
+      display:none;
+    }
+
+    input[type=file] {
+      display:none;
+    }
+
+    /* DARK MODE OVERRIDES */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background:#020617;
+        color:#e5e7eb;
+      }
+
+      h1 {
+        color:#93c5fd;
+      }
+
+      h1 .version {
+        background:#0f172a;
+        color:#cbd5f5;
+        border:1px solid #1e293b;
+      }
+
+      p {
+        color:#9ca3af;
+      }
+
+      .requirements-header {
+        background:#422006;
+        border-color:#713f12;
+        box-shadow:0 4px 16px rgba(15,23,42,0.85);
+        color:#fef08a;
+      }
+
+      .requirements-header:hover {
+        background:#52290a;
+        border-color:#854d0e;
+      }
+
+      .requirements-chevron {
+        color:#fde047;
+      }
+
+      .requirements-content {
+        background:#422006;
+        border-color:#713f12;
+      }
+
+      .requirements-inner li {
+        color:#fef3c7;
+      }
+
+      .requirements-inner li::before {
+        color:#34d399;
+      }
+
+      .requirements-inner .disclaimer {
+        background:#1e1b1b;
+        border-color:#7f1d1d;
+        color:#fca5a5;
+      }
+
+      .drop {
+        background:#020617;
+        border-color:#1d4ed8;
+        color:#bfdbfe;
+        box-shadow:0 12px 30px rgba(15,23,42,0.9);
+      }
+
+      .drop.dragover {
+        background:#0b1120;
+      }
+
+      .session-name {
+        background:#1e293b;
+        border-color:#0ea5e9;
+        color:#e5e7eb;
+        box-shadow:0 6px 24px rgba(15,23,42,0.9);
+      }
+
+      .session-name.good {
+        background:rgba(22,163,74,0.08);
+        border-color:#22c55e;
+        color:#bbf7d0;
+      }
+
+      .session-name.bad {
+        background:rgba(220,38,38,0.08);
+        border-color:#f87171;
+        color:#fecaca;
+      }
+
+      .error-box {
+        background:#1e293b;
+        border-color:#1f2937;
+        color:#e5e7eb;
+      }
+
+      .section {
+        background:#1e293b;
+        border-color:#334155;
+        box-shadow:0 10px 30px rgba(15,23,42,0.85);
+      }
+
+      .section h2 {
+        border-bottom-color:#1f2937;
+      }
+
+      .note {
+        color:#9ca3af;
+      }
+
+      .badge.ok {
+        background:rgba(22,163,74,0.12);
+        border-color:#22c55e;
+        color:#bbf7d0;
+      }
+
+      .badge.fail {
+        background:rgba(220,38,38,0.12);
+        border-color:#f97373;
+        color:#fecaca;
+      }
+
+      .error-item {
+        background:rgba(127,29,29,0.3);
+        border-left-color:#f97373;
+        color:#fecaca;
+      }
+
+      .track-box {
+        background:rgba(22,163,74,0.16);
+        border-color:#22c55e;
+        color:#bbf7d0;
+      }
+
+      .track-box.bad {
+        background:rgba(127,29,29,0.35);
+        border-color:#f97373;
+        color:#fecaca;
+      }
+
+      .track-num {
+        background:#16a34a;
+      }
+
+      .track-box.bad .track-num {
+        background:#dc2626;
+      }
+
+      .should-be {
+        color:#fecaca;
+      }
+
+      .should-be-box {
+        background:#1e293b;
+        border-color:#334155;
+      }
+
+      .should-be code {
+        color:#38bdf8;
+      }
+
+      .copy-btn {
+        color:#38bdf8;
+      }
+
+      .copy-btn::before {
+        background:#0f172a;
+      }
+
+      .copy-btn:hover {
+        background:#1e3a52;
+        color:#7dd3fc;
+      }
+
+      .copy-btn.copied {
+        color:#34d399;
+      }
+
+      .passed-details {
+        background:rgba(22,163,74,0.15);
+        border-color:#22c55e;
+      }
+
+      .passed-details .track-box {
+        background:rgba(22,163,74,0.25);
+        border-color:#22c55e;
+        color:#bbf7d0;
+      }
+
+      #party .perfect {
+        color:#60a5fa;
+      }
+
+      #party .sparkle {
+        color:#f9a8d4;
+      }
+    }
+
+    /* Manual dark-mode class for toggle */
+    body.dark-mode {
+      background:#020617;
+      color:#e5e7eb;
+    }
+    body.dark-mode h1 { color:#93c5fd; }
+    body.dark-mode h1 .version { background:#0f172a; color:#cbd5f5; border:1px solid #1e293b; }
+    body.dark-mode p { color:#9ca3af; }
+    body.dark-mode .requirements-header { background:#422006; border-color:#713f12; color:#fef08a; }
+    body.dark-mode .requirements-header:hover { background:#52290a; border-color:#854d0e; }
+    body.dark-mode .requirements-chevron { color:#fde047; }
+    body.dark-mode .requirements-content { background:#422006; border-color:#713f12; }
+    body.dark-mode .requirements-inner li { color:#fef3c7; }
+    body.dark-mode .requirements-inner li::before { color:#34d399; }
+    body.dark-mode .requirements-inner .disclaimer { background:#1e1b1b; border-color:#7f1d1d; color:#fca5a5; }
+    body.dark-mode .session-name { background:#1e293b; border-color:#0ea5e9; color:#e5e7eb; }
+    body.dark-mode .session-name.good { background:rgba(22,163,74,0.08); border-color:#22c55e; color:#bbf7d0; }
+    body.dark-mode .session-name.bad { background:rgba(220,38,38,0.08); border-color:#f87171; color:#fecaca; }
+    body.dark-mode .error-box { background:#1e293b; border-color:#1f2937; color:#e5e7eb; }
+    body.dark-mode .section { background:#1e293b; border-color:#334155; }
+    body.dark-mode .section h2 { border-bottom-color:#1f2937; }
+    body.dark-mode .note { color:#9ca3af; }
+    body.dark-mode .badge.ok { background:rgba(22,163,74,0.12); border-color:#22c55e; color:#bbf7d0; }
+    body.dark-mode .badge.fail { background:rgba(220,38,38,0.12); border-color:#ef4444; color:#fca5a5; }
+    body.dark-mode .error-list { border-left-color:#374151; }
+    body.dark-mode .error-item { background:rgba(127,29,29,0.3); border-left-color:#f97373; color:#fecaca; }
+    body.dark-mode .track-box { background:rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0; }
+    body.dark-mode .track-box.bad { background:rgba(127,29,29,0.35); border-color:#f97373; color:#fecaca; }
+    body.dark-mode .track-num { background:#16a34a; }
+    body.dark-mode .track-box.bad .track-num { background:#dc2626; }
+    body.dark-mode .should-be { color:#fecaca; }
+    body.dark-mode .should-be-box { background:#1e293b; border-color:#334155; }
+    body.dark-mode .should-be code { color:#38bdf8; }
+    body.dark-mode .copy-btn { color:#38bdf8; }
+    body.dark-mode .copy-btn::before { background:#0f172a; }
+    body.dark-mode .copy-btn:hover { background:#1e3a52; color:#7dd3fc; }
+    body.dark-mode .copy-btn.copied { color:#34d399; }
+    body.dark-mode .passed-details { background:rgba(22,163,74,0.15); border-color:#22c55e; }
+    body.dark-mode .passed-details .track-box { background:rgba(22,163,74,0.25); border-color:#22c55e; color:#bbf7d0; }
+    body.dark-mode #party .perfect { color:#60a5fa; }
+    body.dark-mode #party .sparkle { color:#f9a8d4; }
+
+    /* Light mode override (when system is dark but user picks light) */
+    body.light-mode {
+      background:#fff;
+      color:#222;
+    }
+    body.light-mode h1 { color:#1e40af; }
+    body.light-mode h1 .version { background:#f1f5f9; color:#64748b; border:none; }
+    body.light-mode p { color:#555; }
+    body.light-mode .requirements-header { background:#fefce8; border-color:#fde047; color:#854d0e; }
+    body.light-mode .requirements-header:hover { background:#fef9c3; border-color:#facc15; }
+    body.light-mode .requirements-chevron { color:#a16207; }
+    body.light-mode .requirements-content { background:#fefce8; border-color:#fde047; }
+    body.light-mode .requirements-inner li { color:#713f12; }
+    body.light-mode .requirements-inner li::before { color:#16a34a; }
+    body.light-mode .requirements-inner .disclaimer { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    body.light-mode .session-name { background:#fff; border-color:#0ea5e9; color:#222; }
+    body.light-mode .session-name.good { background:#ecfdf5; border-color:#86efac; color:#166534; }
+    body.light-mode .session-name.bad { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    body.light-mode .error-box { background:#f4f4f4; border-color:#ddd; color:#444; }
+    body.light-mode .section { background:#fafafa; border-color:#e0e0e0; }
+    body.light-mode .section h2 { border-bottom-color:#ddd; }
+    body.light-mode .badge.ok { background:#ecfdf5; color:#16a34a; }
+    body.light-mode .badge.fail { background:#fef2f2; color:#d32f2f; }
+    body.light-mode .error-list { border-left-color:#fca5a5; }
+    body.light-mode .error-item { background:#fff5f5; border-left-color:#f87171; color:#991b1b; }
+    body.light-mode .track-box { background:#f0fdf4; border-color:#86efac; color:#166534; }
+    body.light-mode .track-box.bad { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    body.light-mode .track-num { background:#16a34a; color:#fff; }
+    body.light-mode .track-box.bad .track-num { background:#d32f2f; }
+    body.light-mode .should-be { color:#991b1b; }
+    body.light-mode .should-be-box { background:#f8fafc; border-color:#e2e8f0; }
+    body.light-mode .should-be code { color:#0ea5e9; }
+    body.light-mode .copy-btn { color:#0ea5e9; }
+    body.light-mode .copy-btn::before { background:#fff; }
+    body.light-mode .copy-btn:hover { background:#e0f2fe; color:#0284c7; }
+    body.light-mode .copy-btn.copied { color:#16a34a; }
+    body.light-mode #party .perfect { color:#2563eb; }
+  </style>
+</head>
+<body>
+  <div class="mode-toggle" id="modeToggle">
+    <span class="icon" id="modeIcon">🌙</span>
+    <span id="modeText">Dark</span>
+  </div>
+
+  <h1>
+    TD db <span>🐈 Espresso Markers Checker ✅</span> <span class="version">v1.1.9</span>
+  </h1>
+
+  <div class="requirements-wrapper">
+    <div class="requirements-accordion">
+      <div class="requirements-header" id="requirementsToggle">
+        <span class="icon">⚠️</span>
+        <span>Requirements (click to expand)</span>
+        <span class="requirements-chevron" id="requirementsChevron">▼</span>
+      </div>
+      <div class="requirements-content" id="requirementsContent">
+        <div class="requirements-inner">
+          <ul>
+            <li>Export <strong>Session Info as Text</strong> from Pro Tools</li>
+            <li>Include: <strong>File List</strong></li>
+            <li>Include: <strong>Markers Listing</strong></li>
+            <li>Include: <strong>Track EDLs</strong></li>
+          </ul>
+          <div class="disclaimer">
+            This is not the official Mochi QA Checker. You still need to zip your session and upload the Dropbox URL to the Mochi QA Checker.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="droparea" class="drop">
+    Drop .txt file Here
+    <small>or click to choose</small>
+    <input id="fileinput" type="file" accept=".txt,.markers.txt"/>
+  </div>
+
+  <div id="sessionContainer" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div id="sessionDisplay" class="session-name" style="display:none;">
+      <strong>SESSION NAME:</strong><br>
+      <span id="sessionText"></span>
+    </div>
+    <div id="sessionError" class="error-box" style="display:none;"></div>
+  </div>
+
+  <!-- PARTY GOES HERE — ON TOP -->
+  <div id="partyContainer" style="width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+
+  <div id="output" style="margin-top:20px;width:100%;display:flex;flex-direction:column;align-items:center;"></div>
+
+  <canvas id="confetti"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
